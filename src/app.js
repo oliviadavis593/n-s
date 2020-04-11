@@ -6,6 +6,7 @@ const helmet = require('helmet')
 const { NODE_ENV } = require('./config') 
 const winston = require('winston')
 const NotesService = require('./notes-service')
+const FoldersService = require('./folders-service')
 
 const app = express()
 
@@ -37,6 +38,15 @@ app.get('/notes', (req, res, next) => {
     NotesService.getAllNotes(knexInstance)
         .then(notes => {
             res.json(notes)
+        })
+        .catch(next)
+})
+
+app.get('/folders', (req, res, next) => {
+    const knexInstance = req.app.get('db')
+    FoldersService.getAllFolders(knexInstance)
+        .then(folders => {
+            res.json(folders)
         })
         .catch(next)
 })
