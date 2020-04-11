@@ -13,9 +13,13 @@ describe('Folders Endpoints', function() {
         app.set('db', db)
     })
 
+    const tableCleanup = () => db.raw('TRUNCATE noteful_notes, noteful_folders RESTART IDENTITY CASCADE');
+    
     after('disconnect from db', () => db.destroy())
 
-    before('clean the table', () => db('noteful_folders').truncate())
+    before('clean the table', tableCleanup);
+
+    afterEach('clean the table', tableCleanup);
 
     context('Given there are folders in the database', () => {
         const testFolders = [
