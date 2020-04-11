@@ -1,6 +1,7 @@
 const { expect } = require('chai')
 const knex = require('knex')
 const app = require('../src/app')
+const { makeFoldersArray } = require('./folders.fixtures')
 
 describe('Folders Endpoints', function() {
     let db 
@@ -21,32 +22,61 @@ describe('Folders Endpoints', function() {
 
     afterEach('clean the table', tableCleanup);
 
-    context('Given there are folders in the database', () => {
-        const testFolders = [
-            {
-                id: 1, 
-                folder_name: 'First folder name'
-            },
-            {
-                id: 2, 
-                folder_name: 'Second folder name'
-            },
-            {
-                id: 3, 
-                folder_name: 'Third folder name'
-            }
-        ];
-
-        beforeEach('insert folders', () => {
-            return db 
-                .into('noteful_folders')
-                .insert(testFolders)
+    describe('GET /folders', () => {
+        context('Given there are folders in the database', () => {
+            const testFolders = makeFoldersArray()
+    
+            beforeEach('insert folders', () => {
+                return db 
+                    .into('noteful_folders')
+                    .insert(testFolders)
+            })
+    
+            it('GET /folders responds with 200 and all of the folders', () => {
+                return supertest(app)
+                    .get('/folders')
+                    .expect(200, testFolders)
+            })
         })
 
-        it('GET /folders responds with 200 and all of the folders', () => {
-            return supertest(app)
-                .get('folders')
-                .expect(200)
+        context('Given there are no folders', () => {
+            it(`responds with 200 and an empty list`, () => {
+                return supertest(app)
+                    .get('/folders')
+                    .expect(200, [])
+            })
+        })
+    })
+
+    describe('GET /folders/:folder_id', () => {
+        context('Given there are articles in the database', () => {
+            const testFolders = makeFoldersArray()
+
+            beforeEach('insert folders', () => {
+                return db 
+                    .into('noteful_folders')
+                    .insert(testFolders)
+            })
+
+            it('GET /folders/:folder_id responds with 200 and specified folder', () => {
+                const folderId = 2
+                const expectedFolder = testFolders[folderId - 1]
+                return supertest(app)
+                    .get(`/folders/${folderId}`)
+                    .expect(200, expectedFolder)
+            })
+        })
+
+        context(`Given there are no folders`, () => {
+            it(`responds with 404`, () => {
+                const folderId = 123456
+                return supertest(app)
+                    .get(`/folders/${folderId}`)
+                    .expect(404, {
+                        error: { message: `Folder Not Found`}
+                    })
+            })
         })
     })
 })
+
