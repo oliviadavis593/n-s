@@ -2,7 +2,7 @@ const { expect } = require('chai')
 const knex = require('knex')
 const app = require('../src/app')
 
-describe('Notes Endpoints', function() {
+describe.only('Notes Endpoints', function() {
     let db
 
     before('make knex instance', () => {
@@ -13,42 +13,46 @@ describe('Notes Endpoints', function() {
         app.set('db', db)
     })
 
+    const tableCleanup = () => db.raw('TRUNCATE noteful_notes, noteful_folders RESTART IDENTITY CASCADE');
+    
     after('disconnect from db', () => db.destroy())
 
-    before('clean the table', () => db('noteful_notes').truncate())
+    before('clean the table', tableCleanup);
+
+    afterEach('clean the table', tableCleanup);
 
     context('Given there are notes in the database', () => {
         const testNotes = [
             {
-                id: 1, 
-                note_name: 'First note name',
-                content: 'First content',
+                id: 1,
+                note_name: '1st note test name',
+                content: 'First test content', 
                 modified: '2020-04-11T16:20:35.468Z',
                 folder_id: 1
             },
             {
                 id: 2, 
-                note_name: 'Second note name',
-                content: 'Second content',
+                note_name: '2nd note test name',
+                content: 'Second test content',
                 modified: '2020-04-11T16:20:35.468Z',
                 folder_id: 2
             },
             {
                 id: 3, 
-                note_name: 'Third note name',
-                content: 'Third content',
+                note_name: '3rd note test name',
+                content: 'Third test content',
                 modified: '2020-04-11T16:20:35.468Z',
                 folder_id: 3
             }
         ];
 
         beforeEach('insert notes', () => {
-            return db
+            return db 
                 .into('noteful_notes')
                 .insert(testNotes)
         })
 
-        it.skip('GET /notes responds with 200 and all of the notes', () => {
+        it('GET /notes responds with 200 and all of the notes', () => {
             return supertest(app)
                 .get('/notes')
                 .expect(200)
