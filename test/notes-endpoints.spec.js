@@ -1,6 +1,8 @@
 const { expect } = require('chai')
 const knex = require('knex')
 const app = require('../src/app')
+const { makeFoldersArray } = require('./folders.fixtures')
+const { makeNotesArray } = require('./notes.fixtures')
 
 describe.only('Notes Endpoints', function() {
     let db
@@ -21,41 +23,73 @@ describe.only('Notes Endpoints', function() {
 
     afterEach('clean the table', tableCleanup);
 
-    context('Given there are notes in the database', () => {
-        const testNotes = [
-            {
-                id: 1,
-                note_name: '1st note test name',
-                content: 'First test content', 
-                modified: '2020-04-11T16:20:35.468Z',
-                folder_id: 1
-            },
-            {
-                id: 2, 
-                note_name: '2nd note test name',
-                content: 'Second test content',
-                modified: '2020-04-11T16:20:35.468Z',
-                folder_id: 2
-            },
-            {
-                id: 3, 
-                note_name: '3rd note test name',
-                content: 'Third test content',
-                modified: '2020-04-11T16:20:35.468Z',
-                folder_id: 3
-            }
-        ];
-
-        beforeEach('insert notes', () => {
-            return db 
-                .into('noteful_notes')
-                .insert(testNotes)
+    describe('GET /notes', () => {
+        context('Given there are notes in the database', () => {
+            const testFolders = makeFoldersArray()
+            const testNotes = makeNotesArray()
+    
+            beforeEach('insert notes', () => {
+                return db 
+                    .into('noteful_folders')
+                    .insert(testFolders)
+                    .then(() => {
+                        return db
+                            .into('noteful_notes')
+                            .insert(testNotes)
+                    })
+            })
+    
+            it('GET /notes responds with 200 and all of the notes', () => {
+                return supertest(app)
+                    .get('/notes')
+                    .expect(200, testNotes)
+            })
         })
 
-        it('GET /notes responds with 200 and all of the notes', () => {
-            return supertest(app)
-                .get('/notes')
-                .expect(200)
+        context('Given no notes', () => {
+            it(`responds with 200 and an empty list`, () => {
+                return supertest(app)
+                    .get('/notes')
+                    .expect(200, [])
+            })
+        })
+    })
+
+    describe('GET /notes/:note_id', () => {
+        context('Given there are notes in the database', () => {
+            const testFolders = makeFoldersArray()
+            const testNotes = makeNotesArray()
+
+            beforeEach('insert notes', () => {
+                return db 
+                    .into('noteful_folders')
+                    .insert(testFolders)
+                    .then(() => {
+                        return db
+                            .into('noteful_notes')
+                            .insert(testNotes)
+                    })
+            })
+
+            it('GET /notes/:note_id responds with 200 and specified note', () => {
+                const noteId = 2
+                const expectedNote = testNotes[noteId - 1]
+                return supertest(app)
+                    .get(`/notes/${noteId}`)
+                    .expect(200, expectedNote)
+            })
+        })
+
+        context('Given no notes', () => {
+            it(`responds with 404`, () => {
+                const noteId = 123456
+                return supertest(app)
+                    .get(`/notes/${noteId}`)
+                    .expect(404, {
+                        error: { message: `Note Not Found` }
+                    })
+            })
         })
     })
 })
+

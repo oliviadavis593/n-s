@@ -65,6 +65,20 @@ app.get('/folders/:folder_id', (req, res, next) => {
         .catch(next)
 })
 
+app.get('/notes/:note_id', (req, res, next) => {
+    const knexInstance = req.app.get('db')
+    NotesService.getById(knexInstance, req.params.note_id)
+        .then(note => {
+            if (!note) {
+                return res.status(404).json({
+                    error: { message: `Note Not Found`}
+                })
+            }
+            res.json(note)
+        })
+        .catch(next)
+})
+
 app.get('/', (req, res) => {
     res.send('Hello, world!')
 })
